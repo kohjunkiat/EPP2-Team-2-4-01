@@ -153,7 +153,7 @@ int pwmVal(float speed)
   if(speed > 100.0)
     speed = 100.0;
 
-  return (int) (speed / 100.0) * 255.0;
+  return (int) ((speed / 100.0) * 255.0);
 }
 
 // Move Vincent forward "dist" cm at speed "speed".
@@ -340,7 +340,7 @@ void setup() {
 }
 
 void loop() {
-
+/*
 //Testing
   forward(0, 100);
   delay(1000);
@@ -352,5 +352,5 @@ void loop() {
   delay(1000);
   stop();
   delay(1000);
-//End of test
+//End of test */
 }
