@@ -1,5 +1,3 @@
-
-
 typedef enum
 {
  STOP=0,
@@ -29,18 +27,17 @@ float vincentCirc = 0.0;
 /*
  *    Vincent's State Variables
  */
-
-//varibale for moving forward, backward
+//variable for moving forward, backward
 volatile unsigned long leftForwardTicks; 
 volatile unsigned long rightForwardTicks;
 volatile unsigned long leftReverseTicks; 
 volatile unsigned long rightReverseTicks;
 
-//compute dist
+//Distance moved
 volatile unsigned long forwardDist;
 volatile unsigned long reverseDist;
 
-//checking dist moved
+//To keep track of whether target distance achieved
 unsigned long deltaDist;
 unsigned long newDist;
 
@@ -51,11 +48,11 @@ volatile unsigned long rightForwardTicksTurns;
 volatile unsigned long leftReverseTicksTurns; 
 volatile unsigned long rightReverseTicksTurns;
 
-//checking turning ang
+//To keep track of whether target angle achieved
 volatile unsigned long deltaTicks;
 volatile unsigned long targetTicks;
 
-//compute ang
+//To compute angle
 volatile unsigned long leftRevs;
 volatile unsigned long rightRevs;
 
@@ -70,7 +67,7 @@ void setupSerial()
 {
   // To replace later with bare-metal.
   Serial.begin(9600);
-   Serial.print("Test");
+  Serial.print("Test");
 }
 
 void enablePullups()
@@ -82,8 +79,6 @@ void enablePullups()
 // Functions to be called by INT0 and INT1 ISRs.
 void leftISR()
 {
-  leftForwardTicks++;
-  
   if (dir == FORWARD){
     leftForwardTicks++;
     forwardDist = (unsigned long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
@@ -99,13 +94,12 @@ void leftISR()
     leftForwardTicksTurns++;
   }
  
-  Serial.print("LEFT FORWARD: ");
-  Serial.println(leftForwardTicks);
+  //Serial.print("LEFT FORWARD: ");
+  //Serial.println(leftForwardTicks);
 }
 
 void rightISR()
 {
-  rightForwardTicks++;
   if (dir == FORWARD){
     rightForwardTicks++;
   }
@@ -118,8 +112,8 @@ void rightISR()
   if (dir == RIGHT){
     rightReverseTicksTurns++;
   }
-  Serial.print("RIGHT FORWARD: ");
-  Serial.println(rightForwardTicks);
+  //Serial.print("RIGHT FORWARD: ");
+  //Serial.println(rightForwardTicks);
 }
 
 // Set up the external interrupt pins INT0 and INT1
@@ -155,14 +149,12 @@ void setupMotors()
   TCNT1H = 0;
   TCNT1L = 0;
   
-  
   OCR0A = 0;
   OCR0B = 0;
   OCR1AH = 0;
   OCR1AL = 0;
   OCR1BH = 0;
-  OCR1BL = 0;
-  
+  OCR1BL = 0; 
   
   TIMSK0 |= 0b00000000;
   TIMSK1 |= 0b00000000;
@@ -339,7 +331,7 @@ void stop()
 // Clears all our counters
 void clearCounters()
 {
-  leftForwardTicks=1;
+  leftForwardTicks=0;
   rightForwardTicks=0;
   leftReverseTicks=0;
   rightReverseTicks=0;
@@ -397,7 +389,7 @@ void clearOneCounter(int which)
       break;*/
 }
 
-// Intialize Vincet's internal states
+// Intialize Vincent's internal states
 
 void initializeState()
 {
@@ -423,20 +415,10 @@ void setup() {
 }
 
 void loop() {
+  
+  //forward(0, 100);
 
-//Testing
-  forward(0, 100);
-  delay(1000);
-  reverse(0, 100);
-  delay(1000);
-  left(0, 100);
-  delay(1000);
-  right(0, 100);
-  delay(1000);
-  stop();
-  delay(1000);
-//End of test
-/*//FORWARD, BACKWARD MOVING DISTANCE CHECKING
+//FORWARD, BACKWARD MOVING DISTANCE CHECKING
   if(deltaDist > 0) 
   {
     if(dir==FORWARD) 
@@ -496,5 +478,4 @@ void loop() {
       stop();
     }
   }
-   */
 }
