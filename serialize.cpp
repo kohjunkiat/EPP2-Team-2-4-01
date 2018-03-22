@@ -95,7 +95,7 @@ TResult deserialize(const char *buffer, int len, void *output)
 		if(comms->magic != MAGIC_NUMBER)
 		{
 			printf("BAD MAGIC NUMBER. EXPECTED %x GOT %x\n", MAGIC_NUMBER, comms->magic);
-			return PACKET_BAD;
+			return PACKET_BAD;	
 		}
 
 		// Packet is valid. Now let's do the checksum

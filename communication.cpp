@@ -1,6 +1,6 @@
 #include "serialize.cpp"
 #include "constants.h"
-#include "serialize .h"
+#include "serialize.h"
 static TBuffer _recvBuffer, _xmitBuffer;
 
 /*
@@ -108,7 +108,7 @@ void sendResponse(TComms *packet)
   int len;
 
   len = serialize(buffer, packet, sizeof(TComms));
-  writeSerial(buffer, len);
+  SAY(buffer, len);
 }
 
 ISR(USART_UDRE_vect)
