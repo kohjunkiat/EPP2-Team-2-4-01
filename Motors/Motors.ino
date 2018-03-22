@@ -112,7 +112,7 @@ ISR (INT1_vect)
 void setupMotors()
 {
   DDRD |= 0b01100000;
-  DDRB |= 0b00001100;
+  DDRB |= 0b00000110;
   
   TCNT0 = 0;
   TCNT1H = 0;
