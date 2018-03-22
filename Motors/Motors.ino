@@ -18,7 +18,7 @@ volatile TDirection dir = STOP;
 #define VINCENT_LENGTH 17.5 
 #define VINCENT_BREADTH 12.5 
  
-#define COUNTS_PER_REV      192 //174
+#define COUNTS_PER_REV      192
 #define WHEEL_CIRC          20.42 
 
 //VINCENT diagonal
@@ -69,7 +69,8 @@ volatile unsigned long rightRevs;
 void setupSerial()
 {
   // To replace later with bare-metal.
-  Serial.begin(2000000);
+  Serial.begin(9600);
+   Serial.print("Test");
 }
 
 void enablePullups()
@@ -82,7 +83,7 @@ void enablePullups()
 void leftISR()
 {
   leftForwardTicks++;
-  /*
+  
   if (dir == FORWARD){
     leftForwardTicks++;
     forwardDist = (unsigned long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
@@ -97,8 +98,8 @@ void leftISR()
   if (dir == RIGHT){
     leftForwardTicksTurns++;
   }
-  */
-  //Serial.print("LEFT FORWARD: ");
+ 
+  Serial.print("LEFT FORWARD: ");
   Serial.println(leftForwardTicks);
 }
 
@@ -149,7 +150,7 @@ void setupMotors()
 {
   DDRD |= 0b01100000;
   DDRB |= 0b00000110;
-  
+
   TCNT0 = 0;
   TCNT1H = 0;
   TCNT1L = 0;
@@ -162,8 +163,9 @@ void setupMotors()
   OCR1BH = 0;
   OCR1BL = 0;
   
-  TIMSK0 |= 0b00000110;
-  TIMSK1 |= 0b00000110;
+  
+  TIMSK0 |= 0b00000000;
+  TIMSK1 |= 0b00000000;
   /* Our motor set up is:  
    *    A1IN - Pin 5, PD5, OC0B
    *    A2IN - Pin 6, PD6, OC0A
@@ -407,11 +409,11 @@ void setup() {
 
   cli();
   setupEINT();
+  setupSerial();
   setupMotors();
   startMotors();
   enablePullups();
   initializeState();
-  setupSerial();
   sei();
 
   //compute vincent diagonal
@@ -421,7 +423,7 @@ void setup() {
 }
 
 void loop() {
-/*
+
 //Testing
   forward(0, 100);
   delay(1000);
@@ -433,8 +435,8 @@ void loop() {
   delay(1000);
   stop();
   delay(1000);
-//End of test */
-  //FORWARD, BACKWARD MOVING DISTANCE CHECKING
+//End of test
+/*//FORWARD, BACKWARD MOVING DISTANCE CHECKING
   if(deltaDist > 0) 
   {
     if(dir==FORWARD) 
@@ -494,5 +496,5 @@ void loop() {
       stop();
     }
   }
-          
+   */
 }
