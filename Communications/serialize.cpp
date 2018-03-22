@@ -15,6 +15,7 @@ typedef struct comms
 	uint32_t dataSize;
 	char buffer[MAX_DATA_SIZE];
 	unsigned char checksum;
+	uint32_t params[16];
 	char dummy[3];
 } TComms;
 
