@@ -171,7 +171,7 @@ void enablePullups()
 void leftISR()
 {
   leftTicks++;
-  forwardDist = (leftTicks/COUNT_PER_REV) * WHEEL_CIRC
+  forwardDist = (leftTicks/COUNTS_PER_REV) * WHEEL_CIRC;
   Serial.print("LEFT: ");
   Serial.println(leftTicks);
 }
