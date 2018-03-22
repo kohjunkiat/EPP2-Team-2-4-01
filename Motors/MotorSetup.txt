@@ -1,0 +1,10 @@
+/* Our motor set up is:  
+   
+   *    A2IN - Pin 6, PD6, OC0A Left forward pin
+   *    B1IN - Pin 9, PB1, OC1A Right forward pin
+
+   *    A1IN - Pin 5, PD5, OC0B Left reverse pin
+   *    B2In - pIN 10, PB2, OC1B Right reverse pin
+
+
+*/
