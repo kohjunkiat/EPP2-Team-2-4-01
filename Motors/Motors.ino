@@ -11,35 +11,65 @@ volatile TDirection dir = STOP;
 /*
  * Vincent's configuration constants
  */
+//ALL MEASUREMENTS ARE IN "CM"
+//#define PI 3.141592654
+#define VINCENT_LENGTH 17.5 
+#define VINCENT_BREADTH 12.5 
  
 #define COUNTS_PER_REV      192
-#define WHEEL_CIRC          20.42
+#define WHEEL_CIRC          20.42 
+
+//VINCENT diagonal
+float vincentDiagonal = 0.0;
+//VINCENT turning circumference
+float vincentCirc = 0.0;
 
 /*
  *    Vincent's State Variables
  */
-
+//variable for moving forward, backward
 volatile unsigned long leftForwardTicks; 
 volatile unsigned long rightForwardTicks;
 volatile unsigned long leftReverseTicks; 
 volatile unsigned long rightReverseTicks;
 
+//Distance moved
+volatile unsigned long forwardDist;
+volatile unsigned long reverseDist;
+
+//To keep track of whether target distance achieved
+unsigned long deltaDist;
+unsigned long newDist;
+
+
+//Turning variables
 volatile unsigned long leftForwardTicksTurns; 
 volatile unsigned long rightForwardTicksTurns;
 volatile unsigned long leftReverseTicksTurns; 
 volatile unsigned long rightReverseTicksTurns;
 
+//To keep track of whether target angle achieved
+volatile unsigned long deltaTicks;
+volatile unsigned long targetTicks;
+
+//To compute angle
 volatile unsigned long leftRevs;
 volatile unsigned long rightRevs;
 
-volatile unsigned long forwardDist;
-volatile unsigned long reverseDist;
 
 /*
  * Setup and start codes for external interrupts and 
  * pullup resistors.
  * 
  */
+
+void setupSerial()
+{
+  // To replace later with bare-metal.
+  Serial.begin(9600);
+  Serial.print("Test");
+}
+
 void enablePullups()
 {
   DDRD &= 0b11110011; //Set PD2 and PD3 to inputs
@@ -51,20 +81,21 @@ void leftISR()
 {
   if (dir == FORWARD){
     leftForwardTicks++;
-    forwardDist = (unsinged long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    forwardDist = (unsigned long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
   }
   if (dir == BACKWARD){
     leftReverseTicks++;
-    reverseDist = (unsinged long) ((float) leftReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    reverseDist = (unsigned long) ((float) leftReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
   }
   if (dir == LEFT){
-    leftReverseTicksTurn++;
+    leftReverseTicksTurns++;
   }
   if (dir == RIGHT){
-    leftForwardTicksTurn++;
+    leftForwardTicksTurns++;
   }
-  Serial.print("LEFT: ");
-  Serial.println(leftTicks);
+ 
+  //Serial.print("LEFT FORWARD: ");
+  //Serial.println(leftForwardTicks);
 }
 
 void rightISR()
@@ -76,13 +107,13 @@ void rightISR()
     rightReverseTicks++;
   }
   if (dir == LEFT){
-    rightForwardTicksTurn++;
+    rightForwardTicksTurns++;
   }
   if (dir == RIGHT){
-    rightReverseTicksTurn++;
+    rightReverseTicksTurns++;
   }
-  Serial.print("RIGHT: ");
-  Serial.println(rightTicks);
+  //Serial.print("RIGHT FORWARD: ");
+  //Serial.println(rightForwardTicks);
 }
 
 // Set up the external interrupt pins INT0 and INT1
@@ -112,22 +143,21 @@ ISR (INT1_vect)
 void setupMotors()
 {
   DDRD |= 0b01100000;
-  DDRB |= 0b00001100;
-  
+  DDRB |= 0b00000110;
+
   TCNT0 = 0;
   TCNT1H = 0;
   TCNT1L = 0;
-  
   
   OCR0A = 0;
   OCR0B = 0;
   OCR1AH = 0;
   OCR1AL = 0;
   OCR1BH = 0;
-  OCR1BL = 0;
+  OCR1BL = 0; 
   
-  TIMSK0 |= 0b00000110;
-  TIMSK1 |= 0b00000110;
+  TIMSK0 |= 0b00000000;
+  TIMSK1 |= 0b00000000;
   /* Our motor set up is:  
    *    A1IN - Pin 5, PD5, OC0B
    *    A2IN - Pin 6, PD6, OC0A
@@ -141,7 +171,7 @@ void startMotors()
 {
   TCCR0B = 0b00000011; //Prescale 64, WGM02 = 0
   TCCR1B = 0b00000011; //Prescale 64, WGM13,12=0
-  sei();
+  //sei();
  }
 
 // Convert percentages to PWM values
@@ -165,6 +195,12 @@ void forward(float dist, float speed)
 {
   dir = FORWARD;
   
+  if(dist > 0)
+    deltaDist = dist;
+  else
+    deltaDist=9999999;
+  newDist=forwardDist + deltaDist;
+  
   OCR0A = pwmVal(speed); //LF PWM Val
   OCR1AH = 0;            //RF PWM Val
   OCR1AL = pwmVal(speed);
@@ -187,7 +223,13 @@ void forward(float dist, float speed)
 void reverse(float dist, float speed)
 {
   dir = BACKWARD;
-
+   
+   if(dist > 0)
+    deltaDist = dist;
+  else
+    deltaDist=9999999;
+  newDist = reverseDist + deltaDist;  
+  
   OCR0B = pwmVal(speed); //LR PWM Val
   OCR1BH = 0;            //RR PWM Val
   OCR1BL = pwmVal(speed);
@@ -202,6 +244,15 @@ void reverse(float dist, float speed)
   PORTB &= 0b11111101; // Clear PB1 RF
 }
 
+unsigned long computeDeltaTicks(float ang) 
+{
+  //ang dist move = dist move in 1 wheel
+  unsigned long ticks = (unsigned long) ((ang * vincentCirc * COUNTS_PER_REV)/(360.0 * WHEEL_CIRC));
+
+  return ticks;
+}
+
+
 // Turn Vincent left "ang" degrees at speed "speed".
 // "speed" is expressed as a percentage. E.g. 50 is
 // turn left at half speed.
@@ -210,6 +261,13 @@ void reverse(float dist, float speed)
 void left(float ang, float speed)
 {
   dir = LEFT;
+ 
+  if(ang == 0)
+    deltaTicks=99999999;
+  else
+    deltaTicks=computeDeltaTicks(ang);
+  
+  targetTicks = leftReverseTicksTurns + deltaTicks;
   
   OCR0B = pwmVal(speed); //LR PWM Val
   OCR1AH = 0;            //RF PWM Val
@@ -233,6 +291,12 @@ void left(float ang, float speed)
 void right(float ang, float speed)
 {
   dir = RIGHT;
+    
+  if(ang == 0)
+    deltaTicks=99999999;
+  else
+    deltaTicks=computeDeltaTicks(ang);
+  targetTicks = rightReverseTicksTurns + deltaTicks;
   
   OCR0A = pwmVal(speed); //LF PWM Val
   OCR1BH = 0;            //RR PWM Val
@@ -281,7 +345,13 @@ void clearCounters()
   rightRevs=0;
   
   forwardDist=0;
-  reverseDist=0; 
+  reverseDist=0;
+
+  deltaTicks=0;
+  targetTicks=0;
+
+  newDist=0;
+  deltaDist=0;
 }
 
 // Clears one particular counter
@@ -317,10 +387,9 @@ void clearOneCounter(int which)
     case 6:
       reverseDist=0;
       break;*/
-      
-  }
 }
-// Intialize Vincet's internal states
+
+// Intialize Vincent's internal states
 
 void initializeState()
 {
@@ -332,25 +401,81 @@ void setup() {
 
   cli();
   setupEINT();
+  setupSerial();
   setupMotors();
   startMotors();
   enablePullups();
   initializeState();
   sei();
+
+  //compute vincent diagonal
+  vincentDiagonal = sqrt((VINCENT_LENGTH * VINCENT_LENGTH) + (VINCENT_BREADTH *VINCENT_BREADTH));
+  vincentCirc = PI * vincentDiagonal;
+  
 }
 
 void loop() {
-/*
-//Testing
-  forward(0, 100);
-  delay(1000);
-  reverse(0, 100);
-  delay(1000);
-  left(0, 100);
-  delay(1000);
-  right(0, 100);
-  delay(1000);
-  stop();
-  delay(1000);
-//End of test */
+  
+  //forward(0, 100);
+
+//FORWARD, BACKWARD MOVING DISTANCE CHECKING
+  if(deltaDist > 0) 
+  {
+    if(dir==FORWARD) 
+    {
+      if(forwardDist > newDist) 
+      {
+        deltaDist=0;
+        newDist=0;
+        stop();
+      }
+    }
+  else
+    if(dir == BACKWARD) 
+    {
+      if(reverseDist > newDist) 
+      {
+        deltaDist=0;
+        newDist=0;
+        stop();
+      }
+    }
+  else
+    if(dir == STOP) 
+    {
+      deltaDist=0;
+      newDist=0;
+      stop();
+    }
+  }
+  //TURNING LEFT, RIGHT ANGULAR CHECKING
+  if(deltaTicks > 0)  
+  {
+    if(dir==LEFT) 
+    {
+       if(leftReverseTicksTurns >= targetTicks)
+       {
+        deltaTicks=0;
+        targetTicks=0;
+        stop();
+       }
+    }
+  else
+    if(dir==RIGHT)
+    {
+      if(rightReverseTicksTurns >= targetTicks) 
+      {
+        deltaTicks=0;
+        targetTicks=0;
+        stop();
+      }
+    }
+  else
+    if(dir == STOP) 
+    {
+      deltaTicks=0;
+      targetTicks=0;
+      stop();
+    }
+  }
 }

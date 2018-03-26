@@ -15,6 +15,7 @@ typedef struct comms
 	uint32_t dataSize;
 	char buffer[MAX_DATA_SIZE];
 	unsigned char checksum;
+	uint32_t params[16];
 	char dummy[3];
 } TComms;
 
@@ -95,7 +96,7 @@ TResult deserialize(const char *buffer, int len, void *output)
 		if(comms->magic != MAGIC_NUMBER)
 		{
 			printf("BAD MAGIC NUMBER. EXPECTED %x GOT %x\n", MAGIC_NUMBER, comms->magic);
-			return PACKET_BAD;
+			return PACKET_BAD;	
 		}
 
 		// Packet is valid. Now let's do the checksum
