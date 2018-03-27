@@ -9,7 +9,7 @@
 #include "constants.h"
 
 #define PORT_NAME			"/dev/ttyACM0"
-#define BAUD_RATE			B9600
+#define BAUD_RATE			9600
 
 int exitFlag=0;
 sem_t _xmitSema;

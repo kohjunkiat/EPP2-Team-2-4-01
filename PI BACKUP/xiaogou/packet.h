@@ -3,17 +3,19 @@
 
 #include <stdint.h>
 
-#define MAX_STR_LEN   32
+#define MAX_DATA_SIZE 128
 // This packet has 1 + 1 + 2 + 32 + 16 * 4 = 100 bytes
-typedef struct
+typedef struct comms
 {
-
-	char packetType;
+	uint32_t magic;
+	uint32_t dataSize;
 	char command;
-	char dummy[2]; // Padding to make up 4 bytes
-	char data[MAX_STR_LEN]; // String data
+	char packetType;
+	char buffer[MAX_DATA_SIZE];
+	unsigned char checksum;
 	uint32_t params[16];
-} TPacket;
+	char dummy[1];
+} TComms;
 
 
 #endif

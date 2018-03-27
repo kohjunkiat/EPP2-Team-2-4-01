@@ -1,8 +1,8 @@
-#include "serialize.cpp"
-#include "constants.h"
-#include "serialize.h"
-#include "buffer.h"
 #include "buffer.c"
+#include "constants.h"
+#include "serialize.cpp"
+
+
 static TBuffer _recvBuffer, _xmitBuffer;
 
 /*
@@ -201,5 +201,3 @@ void startSerial()
   UCSR0B = 0b10111000; // interrupt mode
   
 }
-
-
