@@ -1,7 +1,7 @@
 #ifndef __SERIALIZE__
 #define SERIALIZE
 
-#define PACKET_SIZE		140
+#define PACKET_SIZE		204
 #define MAX_DATA_SIZE				128
 
 typedef enum

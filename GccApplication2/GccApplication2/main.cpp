@@ -8,10 +8,10 @@
 #include "serialize.cpp"
 
 
-#define PACKET_SIZE    140
+#define PACKET_SIZE    204
 #define MAX_DATA_SIZE       128
-#define XMIT_SIZE     128
-#define RECV_SIZE     128
+#define XMIT_SIZE     512
+#define RECV_SIZE     512
 
 static TBuffer _recvBuffer, _xmitBuffer;
 
@@ -184,12 +184,32 @@ void handleCommand(TComms *command)
     case COMMAND_FORWARD:
         sendOK();
         forward((float) command->params[0], (float) command->params[1]);
-      break;
+		break;
 
-    /*
-     * Implement code for other commands here.
-     * 
-     */
+    case COMMAND_TURN_LEFT:
+        sendOK();
+        left((float) command->params[0], (float) command->params[1]);
+		break;
+	  
+	case COMMAND_TURN_RIGHT:
+		sendOK();
+		right((float) command->params[0], (float) command->params[1]);
+		break;
+	
+	case COMMAND_STOP:
+		sendOK();
+		stop();
+		break;
+	 
+    case COMMAND_GET_STATS:
+		sendOK();
+        sendStatus();
+		break;
+      
+    case COMMAND_CLEAR_STATS:
+		sendOK();
+        clearOneCounter(command->params[0]);
+		break;
         
     default:
       sendBadCommand();

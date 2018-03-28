@@ -3,13 +3,12 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <stdint.h>
-#include "packet.h"
 #include "serial.h"
-#include "serialize.h"
+#include "serialize.cpp"
 #include "constants.h"
 
 #define PORT_NAME			"/dev/ttyACM0"
-#define BAUD_RATE			9600
+#define BAUD_RATE			B9600
 
 int exitFlag=0;
 sem_t _xmitSema;
@@ -31,7 +30,7 @@ void handleError(TResult error)
 	}
 }
 
-void handleStatus(TPacket *packet)
+void handleStatus(TComms *packet)
 {
 	printf("\n ------- VINCENT STATUS REPORT ------- \n\n");
 	printf("Left Forward Ticks:\t\t%d\n", packet->params[0]);
@@ -47,7 +46,7 @@ void handleStatus(TPacket *packet)
 	printf("\n---------------------------------------\n\n");
 }
 
-void handleResponse(TPacket *packet)
+void handleResponse(TComms *packet)
 {
 	// The response code is stored in command
 	switch(packet->command)
@@ -65,7 +64,7 @@ void handleResponse(TPacket *packet)
 	}
 }
 
-void handleErrorResponse(TPacket *packet)
+void handleErrorResponse(TComms *packet)
 {
 	// The error code is returned in command
 	switch(packet->command)
@@ -91,12 +90,12 @@ void handleErrorResponse(TPacket *packet)
 	}
 }
 
-void handleMessage(TPacket *packet)
+void handleMessage(TComms *packet)
 {
-	printf("Message from Vincent: %s\n", packet->data);
+	printf("Message from Vincent: %s\n", packet->buffer);
 }
 
-void handlePacket(TPacket *packet)
+void handlePacket(TComms *packet)
 {
 	switch(packet->packetType)
 	{
@@ -118,19 +117,19 @@ void handlePacket(TPacket *packet)
 	}
 }
 
-void sendPacket(TPacket *packet)
+void sendPacket(TComms *packet)
 {
-	char buffer[PACKET_SIZE];
-	int len = serialize(buffer, packet, sizeof(TPacket));
+	unsigned char buffer[PACKET_SIZE];
+	int len = serialize(buffer, packet, sizeof(TComms));
 
 	serialWrite(buffer, len);
 }
 
 void *receiveThread(void *p)
 {
-	char buffer[PACKET_SIZE];
+	unsigned char buffer[PACKET_SIZE];
 	int len;
-	TPacket packet;
+	TComms packet;
 	TResult result;
 	int counter=0;
 
@@ -164,7 +163,7 @@ void flushInput()
 	while((c = getchar()) != '\n' && c != EOF);
 }
 
-void getParams(TPacket *commandPacket)
+void getParams(TComms *commandPacket)
 {
 	printf("Enter distance/angle in cm/degrees (e.g. 50) and power in %% (e.g. 75) separated by space.\n");
 	printf("E.g. 50 75 means go at 50 cm at 75%% power for forward/backward, or 50 degrees left or right turn at 75%%  power\n");
@@ -174,7 +173,7 @@ void getParams(TPacket *commandPacket)
 
 void sendCommand(char command)
 {
-	TPacket commandPacket;
+	TComms commandPacket;
 
 	commandPacket.packetType = PACKET_TYPE_COMMAND;
 
@@ -254,7 +253,7 @@ int main()
 	pthread_create(&recv, NULL, receiveThread, NULL);
 
 	// Send a hello packet
-	TPacket helloPacket;
+	TComms helloPacket;
 
 	helloPacket.packetType = PACKET_TYPE_HELLO;
 	sendPacket(&helloPacket);
